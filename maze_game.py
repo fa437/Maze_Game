@@ -14,29 +14,66 @@ I Will be using graphics.py to handle the GUI and python to achieve this.
 from graphics import *
 import time
 
-# Configuration
-GRID_SIZE = 10
 CELL_SIZE = 60
+GRID_SIZE = 10
 WINDOW_SIZE = GRID_SIZE * CELL_SIZE
 
-# Maze layout (1 = wall, 0 = path)
-MAZE = [
-    [1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,0,1,0,0,0,0,0,0,1],
-    [1,0,1,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,1,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,1,1,1,1,1,1,1,1,1]
-]
+# Maze definitions
+MAPS = {
+    "1": {
+        "name": "Easy",
+        "maze": [
+            [1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,1],
+            [1,0,1,0,0,0,0,0,0,1],
+            [1,0,1,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,1],
+            [1,1,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1]
+        ],
+        "start": (1, 1),
+        "goal": (8, 8)
+    },
+    "2": {
+        "name": "Medium",
+        "maze": [
+            [1,1,1,1,1,1,1,1,1,1],
+            [1,0,1,0,0,0,0,1,0,1],
+            [1,0,1,0,1,1,0,1,0,1],
+            [1,0,0,0,0,1,0,1,0,1],
+            [1,1,1,1,0,1,0,1,0,1],
+            [1,0,0,0,0,1,0,0,0,1],
+            [1,0,1,1,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,1,0,1],
+            [1,1,1,1,1,1,0,1,0,1],
+            [1,1,1,1,1,1,1,1,1,1]
+        ],
+        "start": (1, 1),
+        "goal": (8, 8)
+    },
+    "3": {
+        "name": "Hard",
+        "maze": [
+            [1,1,1,1,1,1,1,1,1,1],
+            [1,0,1,0,0,1,0,0,0,1],
+            [1,0,1,0,1,1,0,1,0,1],
+            [1,0,0,0,0,1,0,1,0,1],
+            [1,1,1,1,0,1,0,1,0,1],
+            [1,0,0,0,0,1,0,1,0,1],
+            [1,0,1,1,1,1,0,1,0,1],
+            [1,0,0,0,0,0,0,1,0,1],
+            [1,1,1,1,1,1,1,1,0,1],
+            [1,1,1,1,1,1,1,1,1,1]
+        ],
+        "start": (1, 1),
+        "goal": (8, 8)
+    }
+}
 
-START = (1, 1)
-GOAL = (8, 8)
-
-def draw_maze(win):
+def draw_maze(win, maze, goal):
     for row in range(GRID_SIZE):
         for col in range(GRID_SIZE):
             x1 = col * CELL_SIZE
@@ -44,10 +81,13 @@ def draw_maze(win):
             x2 = x1 + CELL_SIZE
             y2 = y1 + CELL_SIZE
             rect = Rectangle(Point(x1, y1), Point(x2, y2))
-            rect.setFill("black" if MAZE[row][col] == 1 else "white")
+            if (col, row) == goal:
+                rect.setFill("lightgreen")
+            else:
+                rect.setFill("black" if maze[row][col] == 1 else "white")
             rect.draw(win)
 
-def create_player(x, y):
+def create_player(win, x, y):
     cx = x * CELL_SIZE + CELL_SIZE // 2
     cy = y * CELL_SIZE + CELL_SIZE // 2
     player = Circle(Point(cx, cy), CELL_SIZE // 3)
@@ -55,37 +95,78 @@ def create_player(x, y):
     player.draw(win)
     return player
 
-def move_player(player, dx, dy, pos):
+def move_player(player, dx, dy, pos, maze):
     new_x = pos[0] + dx
     new_y = pos[1] + dy
     if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
-        if MAZE[new_y][new_x] == 0:
+        if maze[new_y][new_x] == 0:
             player.move(dx * CELL_SIZE, dy * CELL_SIZE)
             return new_x, new_y
     return pos
 
-def main():
-    global win
-    win = GraphWin("Maze Game", WINDOW_SIZE, WINDOW_SIZE)
-    draw_maze(win)
+def show_menu(unlocked_levels):
+    menu_win = GraphWin("Maze Game - Menu", 400, 320)
+    menu_win.setBackground("lightblue")
+    title = Text(Point(200, 40), "Select Level")
+    title.setSize(20)
+    title.setStyle("bold")
+    title.draw(menu_win)
 
-    pos = START
-    player = create_player(*pos)
+    options = [("1", "Easy"), ("2", "Medium"), ("3", "Hard"), ("q", "Quit")]
+    y = 100
+    for key, label in options:
+        txt = f"{label}" + (" (locked)" if key in MAPS and key not in unlocked_levels else "")
+        t = Text(Point(200, y), f"Press {key.upper()} for {txt}")
+        t.setSize(14)
+        t.setTextColor("gray" if key in MAPS and key not in unlocked_levels else "black")
+        t.draw(menu_win)
+        y += 40
 
-    # Timer setup
-    start_time = time.time()
+    while True:
+        key = menu_win.getKey().lower()
+        if key == 'q':
+            menu_win.close()
+            return key
+        if key in MAPS and key in unlocked_levels:
+            menu_win.close()
+            return key
+
+def wait_for_enter(win):
+    msg = Text(Point(WINDOW_SIZE // 2, WINDOW_SIZE // 2 + 40), "Press ENTER to continue")
+    msg.setSize(12)
+    msg.setFill("gray")
+    msg.draw(win)
+    while win.getKey().lower() != "return":
+        pass
+
+def play_level(level_data):
+    maze = level_data["maze"]
+    start = level_data["start"]
+    goal = level_data["goal"]
+
+    win = GraphWin(f"Maze - {level_data['name']}", WINDOW_SIZE, WINDOW_SIZE)
+    draw_maze(win, maze, goal)
+
+    pos = start
+    player = create_player(win, *pos)
+
     timer_text = Text(Point(60, 20), "Time: 0.0s")
     timer_text.setSize(12)
     timer_text.draw(win)
 
+    start_time = time.time()
+
     while True:
-        # Update timer
         elapsed = time.time() - start_time
         timer_text.setText(f"Time: {elapsed:.1f}s")
 
-        # Get key (non-blocking)
         key = win.checkKey().lower()
         if key == "q":
+            msg = Text(Point(WINDOW_SIZE // 2, WINDOW_SIZE // 2), "You quit the game.")
+            msg.setSize(14)
+            msg.setFill("gray")
+            msg.draw(win)
+            wait_for_enter(win)
             break
 
         dx = dy = 0
@@ -95,17 +176,30 @@ def main():
         elif key == "d": dx = 1
 
         if key in "wasd":
-            pos = move_player(player, dx, dy, pos)
-            if pos == GOAL:
+            pos = move_player(player, dx, dy, pos, maze)
+            if pos == goal:
                 win_msg = Text(Point(WINDOW_SIZE // 2, WINDOW_SIZE // 2), f"You Win! Time: {elapsed:.1f}s")
                 win_msg.setSize(16)
                 win_msg.setStyle("bold")
                 win_msg.setFill("green")
                 win_msg.draw(win)
-                win.getMouse()
-                break
-
+                wait_for_enter(win)
+                win.close()
+                return True
     win.close()
+    return False
+
+def main():
+    unlocked_levels = {"1"}  # Only Easy is unlocked at start
+    while True:
+        selected = show_menu(unlocked_levels)
+        if selected == "q":
+            break
+        won = play_level(MAPS[selected])
+        if won and selected == "1":
+            unlocked_levels.add("2")
+        elif won and selected == "2":
+            unlocked_levels.add("3")
 
 if __name__ == "__main__":
     main()
