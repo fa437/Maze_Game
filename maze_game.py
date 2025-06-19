@@ -112,22 +112,26 @@ def show_menu(unlocked_levels):
     title.setStyle("bold")
     title.draw(menu_win)
 
-    options = [("1", "Easy"), ("2", "Medium"), ("3", "Hard"), ("q", "Quit")]
+    options = [("1", "Easy"), ("2", "Medium"), ("3", "Hard"), ("q", "Quit Game")]
     y = 100
     for key, label in options:
-        txt = f"{label}" + (" (locked)" if key in MAPS and key not in unlocked_levels else "")
-        t = Text(Point(200, y), f"Press {key.upper()} for {txt}")
+        if key == "q":
+            t = Text(Point(200, y), "Press Q to Quit Game")
+            t.setTextColor("black")
+        else:
+            txt = f"{label}" + (" (locked)" if key not in unlocked_levels else "")
+            t = Text(Point(200, y), f"Press {key.upper()} for {txt}")
+            t.setTextColor("gray" if key not in unlocked_levels else "black")
         t.setSize(14)
-        t.setTextColor("gray" if key in MAPS and key not in unlocked_levels else "black")
         t.draw(menu_win)
         y += 40
 
     while True:
         key = menu_win.getKey().lower()
-        if key == 'q':
+        if key == "q":
             menu_win.close()
             return key
-        if key in MAPS and key in unlocked_levels:
+        elif key in MAPS and key in unlocked_levels:
             menu_win.close()
             return key
 
