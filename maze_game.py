@@ -8,7 +8,7 @@ Created on Tue Jun 3 10:16:20 2025
 Program: Maze Game
 
 This a Maze game created for end of semester project for Informatics II,
-I Will be using graphics.py to handle the GUI and python to achieve this.
+I will be using graphics.py to handle the GUI and python to achieve this.
 """
 
 from graphics import *
@@ -98,14 +98,14 @@ def create_player(win, x, y):
 def move_player(player, dx, dy, pos, maze):
     new_x = pos[0] + dx
     new_y = pos[1] + dy
-    if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
+    if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE: #this is to make sure the new pos is inside the maze boundaries
         if maze[new_y][new_x] == 0:
             player.move(dx * CELL_SIZE, dy * CELL_SIZE)
             return new_x, new_y
     return pos
 
 def show_menu(unlocked_levels):
-    menu_win = GraphWin("Maze Game - Menu", 400, 320)
+    menu_win = GraphWin("Maze Game - Menu", 400, 300)
     menu_win.setBackground("lightblue")
     title = Text(Point(200, 40), "Select Level")
     title.setSize(20)
@@ -156,6 +156,7 @@ def play_level(level_data):
 
     timer_text = Text(Point(60, 20), "Time: 0.0s")
     timer_text.setSize(12)
+    timer_text.setTextColor("white")
     timer_text.draw(win)
 
     start_time = time.time()
@@ -165,13 +166,42 @@ def play_level(level_data):
         timer_text.setText(f"Time: {elapsed:.1f}s")
 
         key = win.checkKey().lower()
-        if key == "q":
-            msg = Text(Point(WINDOW_SIZE // 2, WINDOW_SIZE // 2), "You quit the game.")
+
+        if key in ["q", "escape"]:
+            overlay = Rectangle(Point(100, 200), Point(500, 300))
+            overlay.setFill("white")
+            overlay.setOutline("black")
+            overlay.draw(win)
+
+            msg = Text(Point(300, 230), "Are you sure you want to quit?")
             msg.setSize(14)
-            msg.setFill("gray")
+            msg.setStyle("bold")
             msg.draw(win)
-            wait_for_enter(win)
-            break
+
+            yes_text = Text(Point(240, 270), "Y = Yes")
+            yes_text.setFill("red")
+            yes_text.setSize(12)
+            yes_text.draw(win)
+
+            no_text = Text(Point(360, 270), "N = No")
+            no_text.setFill("green")
+            no_text.setSize(12)
+            no_text.draw(win)
+
+            # Wait for response
+            while True:
+                confirm_key = win.getKey().lower()
+                if confirm_key == "y":
+                    win.close()
+                    return False
+                elif confirm_key == "n":
+                    # Undraw prompt
+                    overlay.undraw()
+                    msg.undraw()
+                    yes_text.undraw()
+                    no_text.undraw()
+                    break
+            continue  # go back to top of loop
 
         dx = dy = 0
         if key == "w": dy = -1
@@ -190,6 +220,7 @@ def play_level(level_data):
                 wait_for_enter(win)
                 win.close()
                 return True
+
     win.close()
     return False
 
